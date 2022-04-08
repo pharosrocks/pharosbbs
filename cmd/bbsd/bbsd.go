@@ -1,11 +1,13 @@
 package main
 
 import (
+	"github.com/joho/godotenv"
 	"github.com/pharosrocks/pharosbbs/bbs"
 )
 
 func main() {
-	var bbs = &bbs.Server{}
+	var bbs = bbs.NewServer()
+	godotenv.Load()
 	bbs.ListenAndServe(":8080")
 
 }

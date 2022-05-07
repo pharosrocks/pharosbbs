@@ -2,22 +2,24 @@ package bbs
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
+	"github.com/appleboy/graceful"
 	"github.com/enriquebris/goconcurrentqueue"
+	"github.com/gin-contrib/logger"
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type Server struct {
+	engine  *gin.Engine
 	fifo    *goconcurrentqueue.FIFO
-	context context.Context
+	manager *graceful.Manager
 	stop    context.CancelFunc
 }
 
@@ -36,8 +38,17 @@ func (s *Server) render() multitemplate.Renderer {
 }
 
 func (s *Server) ListenAndServe(addr string) (err error) {
-	s.context, s.stop = signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer s.stop()
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if gin.IsDebugging() {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
+	log.Logger = log.Output(
+		zerolog.ConsoleWriter{
+			Out:     os.Stderr,
+			NoColor: false,
+		},
+	)
 
 	// cert := GetCertificate()
 
@@ -45,16 +56,18 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 	// 	Certificates: []tls.Certificate{cert},
 	// }
 
-	routeGroup := gin.Default()
+	s.engine = gin.New()
+	s.engine.Use(logger.SetLogger(), gin.Recovery())
 
 	// TODO: custom static dir
-	routeGroup.Use(static.Serve("/static/", static.LocalFile(os.Getenv("WEB_STATIC"), false)))
+	s.engine.Use(static.Serve("/static/", static.LocalFile(os.Getenv("WEB_STATIC"), false)))
 
 	// TODO: custom render dir
-	routeGroup.HTMLRender = s.render()
+	s.engine.HTMLRender = s.render()
 
-	routeGroup.GET("/", gin.HandlerFunc(s.telnetHandler))
-	routeGroup.GET("/login", func(c *gin.Context) {
+	s.engine.GET("/", gin.HandlerFunc(s.telnetHandler))
+	s.engine.GET("/login", func(c *gin.Context) {
+		s.fifo.Enqueue(100)
 		c.HTML(200, "login", gin.H{
 			"title": "Html5 Template Engine",
 		})
@@ -62,38 +75,53 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 
 	wsServer := http.Server{
 		//		TLSConfig: tlsConfig,
-		Handler: routeGroup,
+		Handler: s.engine,
 		Addr:    addr,
 	}
 
-	// wsServer goroutine
+	s.manager = graceful.NewManager()
+
+	// wsServer.ListenAndServe
 	go func() {
 		if err := wsServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			log.Error().Str("error", err.Error())
 		}
 	}()
 
-	// dispatcher goroutine
-	go func() {
+	// wsServer.Shutdown
+	s.manager.AddRunningJob(func(ctx context.Context) error {
 		for {
-			value, _ := s.fifo.DequeueOrWaitForNextElementContext(s.context)
-
-			if value != nil {
-				log.Printf("%v", value)
+			select {
+			case <-ctx.Done():
+				if err := wsServer.Shutdown(ctx); err != nil {
+					// TODO: log shutdown failed
+					return err
+				}
+				return nil
+			default:
+				time.Sleep(1 * time.Second)
 			}
 		}
+	})
 
-	}()
+	// dispatcher goroutine
+	s.manager.AddRunningJob(func(ctx context.Context) error {
+		for {
+			select {
+			case <-ctx.Done():
+				// TODO: s.fifo clean up
+				return nil
+			default:
+				value, _ := s.fifo.DequeueOrWaitForNextElementContext(s.context)
 
-	<-s.context.Done()
-	log.Printf("shutdown gracefully...")
-	s.stop()
+				if value != nil {
+					log.Printf("%v", value)
+				}
+			}
+		}
+	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := wsServer.Shutdown(ctx); err != nil {
-		log.Fatal("Server forced to shutdown: ", err)
-	}
+	<-s.manager.Done()
 
 	return err
 }

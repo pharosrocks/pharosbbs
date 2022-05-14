@@ -16,12 +16,10 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/pharosrocks/pharosbbs/gingenius"
-	"github.com/pharosrocks/pharosbbs/mastodon"
 )
 
 type Server struct {
 	gingenius.Server
-	engine  *gin.Engine
 	fifo    *goconcurrentqueue.FIFO
 	manager *graceful.Manager
 }
@@ -59,14 +57,18 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 	// 	Certificates: []tls.Certificate{cert},
 	// }
 
-	s.engine = gin.New()
-	s.engine.Use(logger.SetLogger(), gin.Recovery())
+	gin.SetMode(gin.ReleaseMode)
+	s.Engine = gin.New()
 
 	// TODO: custom static dir
-	s.engine.Use(static.Serve("/static/", static.LocalFile(os.Getenv("WEB_STATIC"), false)))
+	s.Engine.Use(
+		logger.SetLogger(),
+		gin.Recovery(),
+		static.Serve("/static/", static.LocalFile(os.Getenv("WEB_STATIC"), false)),
+	)
 
 	// TODO: custom render dir
-	s.engine.HTMLRender = s.render()
+	s.Engine.HTMLRender = s.render()
 
 	// add bbsd features
 	s.With(s.bbsd())
@@ -76,7 +78,7 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 
 	wsServer := http.Server{
 		//		TLSConfig: tlsConfig,
-		Handler: s.engine,
+		Handler: s.Engine,
 		Addr:    addr,
 	}
 
@@ -113,7 +115,7 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 				// TODO: s.fifo clean up
 				return nil
 			default:
-				value, _ := s.fifo.DequeueOrWaitForNextElement()
+				value, _ := s.fifo.DequeueOrWaitForNextElementContext(ctx)
 
 				if value != nil {
 					log.Printf("%v", value)

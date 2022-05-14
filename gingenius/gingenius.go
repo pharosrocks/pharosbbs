@@ -10,7 +10,7 @@ type GeniusServer interface {
 
 type Server struct {
 	GeniusServer
-	engine *gin.Engine
+	Engine *gin.Engine
 }
 
 type Features struct {
@@ -27,7 +27,7 @@ func NewFeatures(routes gin.RoutesInfo) *Features {
 
 func (s *Server) With(f *Features) (err error) {
 	for _, r := range f.routes {
-		s.engine.Handle(r.Method, r.Path, r.HandlerFunc)
+		s.Engine.Handle(r.Method, r.Path, r.HandlerFunc)
 	}
 
 	return err

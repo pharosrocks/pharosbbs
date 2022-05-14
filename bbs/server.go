@@ -14,9 +14,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
+	"github.com/pharosrocks/pharosbbs/gingenius"
+	"github.com/pharosrocks/pharosbbs/mastodon"
 )
 
 type Server struct {
+	gingenius.Server
 	engine  *gin.Engine
 	fifo    *goconcurrentqueue.FIFO
 	manager *graceful.Manager
@@ -73,6 +77,9 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 		})
 	})
 
+	// add mastodon features
+	s.With(mastodon.Features(&mastodon.Mastodon{}))
+
 	wsServer := http.Server{
 		//		TLSConfig: tlsConfig,
 		Handler: s.engine,
@@ -112,7 +119,7 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 				// TODO: s.fifo clean up
 				return nil
 			default:
-				value, _ := s.fifo.DequeueOrWaitForNextElementContext(s.context)
+				value, _ := s.fifo.DequeueOrWaitForNextElement()
 
 				if value != nil {
 					log.Printf("%v", value)

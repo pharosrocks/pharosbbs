@@ -6,23 +6,19 @@ import (
 )
 
 type IMastodon interface {
-	PublicTimeline(c *gin.Context)
-	HomeTimeline(c *gin.Context)
-	DirectTimeline(c *gin.Context)
-}
-
-type Mastodon struct {
-	IMastodon
+	MastodonPublicTimeline(c *gin.Context)
+	MastodonHomeTimeline(c *gin.Context)
+	MastodonDirectTimeline(c *gin.Context)
 }
 
 // mastodon features
-func Features(m *Mastodon) (features *gingenius.Features) {
+func Features(m IMastodon) (features *gingenius.Features) {
 	r := gin.New()
 
 	api := r.Group("v1/")
-	api.GET("timelines/home", gin.HandlerFunc(m.PublicTimeline))
-	api.GET("timelines/public", gin.HandlerFunc(m.HomeTimeline))
-	api.GET("timelines/direct", gin.HandlerFunc(m.DirectTimeline))
+	api.GET("timelines/home", gin.HandlerFunc(m.MastodonPublicTimeline))
+	api.GET("timelines/public", gin.HandlerFunc(m.MastodonHomeTimeline))
+	api.GET("timelines/direct", gin.HandlerFunc(m.MastodonDirectTimeline))
 
 	features = gingenius.NewFeatures(r.Routes())
 

@@ -10,8 +10,16 @@ import (
 	"github.com/PatrickRudolph/telnet/options"
 	"github.com/gin-gonic/gin"
 
+	"github.com/pharosrocks/pharosbbs/gingenius"
 	"github.com/pharosrocks/pharosbbs/websocket"
 )
+
+func (s *Server) bbsd() *gingenius.Features {
+	r := gin.New()
+	r.GET("/", gin.HandlerFunc(s.telnetHandler))
+
+	return gingenius.NewFeatures(r.Routes())
+}
 
 func (s *Server) telnetHandler(c *gin.Context) {
 	upgrader := websocket.Upgrader{

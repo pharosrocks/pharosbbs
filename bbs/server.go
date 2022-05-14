@@ -24,7 +24,6 @@ type Server struct {
 	engine  *gin.Engine
 	fifo    *goconcurrentqueue.FIFO
 	manager *graceful.Manager
-	stop    context.CancelFunc
 }
 
 func NewServer() *Server {
@@ -69,16 +68,11 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 	// TODO: custom render dir
 	s.engine.HTMLRender = s.render()
 
-	s.engine.GET("/", gin.HandlerFunc(s.telnetHandler))
-	s.engine.GET("/login", func(c *gin.Context) {
-		s.fifo.Enqueue(100)
-		c.HTML(200, "login", gin.H{
-			"title": "Html5 Template Engine",
-		})
-	})
+	// add bbsd features
+	s.With(s.bbsd())
 
 	// add mastodon features
-	s.With(mastodon.Features(&mastodon.Mastodon{}))
+	s.With(s.mastodon())
 
 	wsServer := http.Server{
 		//		TLSConfig: tlsConfig,

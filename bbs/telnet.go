@@ -10,15 +10,15 @@ import (
 	"github.com/PatrickRudolph/telnet/options"
 	"github.com/gin-gonic/gin"
 
-	"github.com/pharosrocks/pharosbbs/gingenius"
+	"github.com/ginmills/ginmill"
 	"github.com/pharosrocks/pharosbbs/websocket"
 )
 
-func (s *Server) bbsd() *gingenius.Features {
+func (s *Server) bbsd() *ginmill.Features {
 	r := gin.New()
 	r.GET("/", gin.HandlerFunc(s.telnetHandler))
 
-	return gingenius.NewFeatures(r.Routes())
+	return ginmill.NewFeatures(r.Routes())
 }
 
 func (s *Server) telnetHandler(c *gin.Context) {

@@ -1,6 +1,6 @@
 module github.com/pharosrocks/pharosbbs
 
-go 1.17
+go 1.18
 
 require (
 	github.com/PatrickRudolph/telnet v0.0.0-20210301083732-6a03c1f7971f
@@ -38,6 +38,8 @@ require (
 	github.com/gin-contrib/multitemplate v0.0.0-20220203231411-2a098756d076
 	github.com/gin-contrib/static v0.0.1
 	github.com/gin-gonic/gin v1.7.7
+	github.com/ginmills/ginmill v0.0.0-20220519141130-a92001e4dc12
+	github.com/ginmills/mastodon v0.0.0-20220519141241-84b855ad4998
 	github.com/gorilla/websocket v1.5.0
 	github.com/joho/godotenv v1.4.0
 	github.com/onsi/gomega v1.18.1 // indirect

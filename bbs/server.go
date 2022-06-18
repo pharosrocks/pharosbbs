@@ -9,17 +9,18 @@ import (
 	"github.com/appleboy/graceful"
 	"github.com/enriquebris/goconcurrentqueue"
 	"github.com/gin-contrib/logger"
-	"github.com/gin-contrib/multitemplate"
-	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"github.com/pharosrocks/pharosbbs/gingenius"
+	"github.com/ginmills/ginmill"
+	"github.com/ginmills/mastodon"
 )
 
 type Server struct {
-	gingenius.Server
+	ginmill.Server
+	mastodon.IMastodon
+	
 	fifo    *goconcurrentqueue.FIFO
 	manager *graceful.Manager
 }
@@ -28,14 +29,6 @@ func NewServer() *Server {
 	s := new(Server)
 	s.fifo = goconcurrentqueue.NewFIFO()
 	return s
-}
-
-func (s *Server) render() multitemplate.Renderer {
-	dir := os.Getenv("WEB_TEMPLATE")
-
-	r := multitemplate.NewRenderer()
-	r.AddFromFiles("login", dir+"/login.html")
-	return r
 }
 
 func (s *Server) ListenAndServe(addr string) (err error) {
@@ -64,11 +57,7 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 	s.Engine.Use(
 		logger.SetLogger(),
 		gin.Recovery(),
-		static.Serve("/static/", static.LocalFile(os.Getenv("WEB_STATIC"), false)),
 	)
-
-	// TODO: custom render dir
-	s.Engine.HTMLRender = s.render()
 
 	// add bbsd features
 	s.With(s.bbsd())

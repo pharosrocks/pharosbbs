@@ -8,6 +8,6 @@ import (
 func main() {
 	var bbs = bbs.NewServer()
 	godotenv.Load()
-	bbs.ListenAndServe(":80")
+	bbs.ListenAndServe(":8080")
 
 }

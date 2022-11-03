@@ -1,0 +1,23 @@
+services:
+- type: web
+  name: pharosbbs
+  plan: free
+  env: docker
+  autoDeploy: false
+  disk:
+    name: bbs
+    mountPath: /bbs
+  envVars:
+  - fromGroup: pharosbbs
+
+envVarGroups:
+- name: pharosbbs
+  envVars:
+  # - key: MYSQL_DATABASE
+  #   value: mysql
+  # - key: MYSQL_USER
+  #   value: mysql
+  # - key: MYSQL_PASSWORD
+  #   generateValue: true
+  # - key: MYSQL_ROOT_PASSWORD
+  #   generateValue: true

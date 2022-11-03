@@ -20,7 +20,7 @@ import (
 type Server struct {
 	ginmill.Server
 	mastodon.IMastodon
-	
+
 	fifo    *goconcurrentqueue.FIFO
 	manager *graceful.Manager
 }
@@ -58,6 +58,9 @@ func (s *Server) ListenAndServe(addr string) (err error) {
 		logger.SetLogger(),
 		gin.Recovery(),
 	)
+
+	// cheers
+	s.With(s.cheers())
 
 	// add bbsd features
 	s.With(s.bbsd())

@@ -4,14 +4,14 @@ RUN apt-get update && apt-get install -y libuv1-dev libsqlite3-dev liblz4-dev li
 RUN git clone https://github.com/canonical/raft.git && \
     cd raft && \
     autoreconf -i && \
-    ./configure && \
+    ./configure --prefix=/usr && \
     make && \
     make install && \
     cd ..
 RUN git clone https://github.com/canonical/dqlite.git && \
     cd dqlite && \
     autoreconf -i && \
-    ./configure && \
+    ./configure --prefix=/usr && \
     make && \
     make install && \
     cd ..

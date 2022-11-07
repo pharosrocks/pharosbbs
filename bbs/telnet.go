@@ -2,6 +2,7 @@ package bbs
 
 import (
 	"log"
+	"bufio"
 	"net/http"
 	"sync"
 	"time"
@@ -53,18 +54,20 @@ func TelnetRoutine(c *telnet.Connection) {
 
 func exampleHandler(c *telnet.Connection) {
 	log.Printf("Connection received: %s", c.RemoteAddr())
-	lr := NewReader()
-	go lr.Read(c)
-
+	br := bufio.NewReader(c)
+	bw := bufio.NewWriter(c)
+	rw := bufio.NewReadWriter(br, bw)
 	wg := new(sync.WaitGroup)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
 
-		for line := range lr.C {
-			log.Printf("Received line: %v", string(line))
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		for {
+			r, size, _ := rw.ReadRune()
+			log.Printf("Received Bytes: %v(%d)", string(r), size)
 		}
 	}()
+
 	time.Sleep(time.Millisecond)
 	nh := c.OptionHandlers[telnet.TeloptNAWS].(*options.NAWSHandler)
 	log.Printf("Client width: %d, height: %d", nh.Width, nh.Height)

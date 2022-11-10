@@ -1,8 +1,8 @@
 package bbs
 
 import (
-	"log"
 	"bufio"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -59,8 +59,8 @@ func exampleHandler(c *telnet.Connection) {
 	rw := bufio.NewReadWriter(br, bw)
 	wg := new(sync.WaitGroup)
 
+	wg.Add(1)
 	go func() {
-		wg.Add(1)
 		defer wg.Done()
 		for {
 			r, size, _ := rw.ReadRune()
